@@ -38,6 +38,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -128,6 +129,18 @@ final class SlashCommand<S> implements Command<S, SlashSubCommand<S>> {
         final SlashSubCommand<S> subCommand = getSubCommand(subCommandName);
         if (subCommand == null) return;
         subCommand.execute(sender, subCommand.mapArguments(args));
+    }
+
+    @NotNull
+    public List<String> getSuggestions(
+            @NotNull final S sender,
+            @NotNull final String subCommandName,
+            @NotNull final Map<String, String> args
+    ) {
+        System.out.println(args);
+        final SlashSubCommand<S> subCommand = getSubCommand(subCommandName);
+        if (subCommand == null) return Collections.emptyList();
+        return subCommand.getSuggestions(sender, subCommand.mapArguments(args));
     }
 
     @NotNull

@@ -25,7 +25,10 @@ package dev.triumphteam.cmd.slash;
 
 import dev.triumphteam.cmd.core.AbstractSubCommand;
 import dev.triumphteam.cmd.core.argument.InternalArgument;
+import dev.triumphteam.cmd.core.argument.LimitlessInternalArgument;
 import dev.triumphteam.cmd.core.execution.ExecutionProvider;
+import dev.triumphteam.cmd.core.suggestion.EmptySuggestion;
+import dev.triumphteam.cmd.core.suggestion.SuggestionContext;
 import dev.triumphteam.cmd.slash.choices.Choice;
 import dev.triumphteam.cmd.slash.choices.EmptyChoice;
 import dev.triumphteam.cmd.slash.util.JdaOptionUtil;
@@ -37,6 +40,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
 
 final class SlashSubCommand<S> extends AbstractSubCommand<S> {
 
@@ -71,16 +76,38 @@ final class SlashSubCommand<S> extends AbstractSubCommand<S> {
                     internalArgument.getDescription(),
                     !internalArgument.isOptional()
             );
-            // option.setAutoComplete(type.canSupportChoices());
             options.add(option);
 
-            final Choice suggestion = getChoice(i);
-            if (suggestion instanceof EmptyChoice) continue;
+            final Choice choice = getChoice(i);
+            if (choice instanceof EmptyChoice) {
+                if (internalArgument.getSuggestion() instanceof EmptySuggestion) continue;
+                // For now suggestions are only allowed on Strings
+                if (option.getType() != OptionType.STRING) continue;
+                // Enable suggestions if available
+                option.setAutoComplete(type.canSupportChoices());
+                continue;
+            }
 
-            option.addChoices(suggestion.getChoices().stream().map(it -> new Command.Choice(it, it)).limit(25).collect(Collectors.toList()));
+            option.addChoices(choice.getChoices().stream().map(it -> new Command.Choice(it, it)).limit(25).collect(Collectors.toList()));
         }
 
         return options;
+    }
+
+    public List<String> getSuggestions(@NotNull final S sender, @NotNull final List<String> args) {
+        final int index = args.size() - 1;
+        final InternalArgument<S, ?> internalArgument = getArgument(index);
+        if (internalArgument == null) return emptyList();
+
+        final List<String> trimmed;
+        if (internalArgument instanceof LimitlessInternalArgument) {
+            trimmed = args.subList(getArguments().size() - 1, args.size());
+        } else {
+            trimmed = args.subList(index, args.size());
+        }
+
+        final SuggestionContext context = new SuggestionContext(args, getParentName(), getName());
+        return internalArgument.suggestions(sender, trimmed, context);
     }
 
     @NotNull

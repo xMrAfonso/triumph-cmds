@@ -117,7 +117,8 @@ public abstract class AbstractInternalArgument<S, T> implements InternalArgument
         return optional;
     }
 
-    protected Suggestion<S> getSuggestion() {
+    @NotNull
+    public Suggestion<S> getSuggestion() {
         return suggestion;
     }
 
